@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { CircularProgress, Typography, Box, Paper } from "@mui/material";
+import Comment from "../Comments/Comment";
 
 const PostDetails = ({ postId }) => {
   const [post, setPost] = useState(null);
@@ -8,7 +9,7 @@ const PostDetails = ({ postId }) => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    fetch(`http://localhost:8080/posts/${postId}`, {
+    fetch(`http://localhost:8080/comments/post/${postId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -42,17 +43,7 @@ const PostDetails = ({ postId }) => {
       </Paper>
       <Typography variant="h6">Comments:</Typography>
       {comments.map((comment) => (
-        <Paper
-          key={comment.id}
-          elevation={2}
-          sx={{ padding: "10px", marginTop: "10px" }}
-        >
-          <Typography variant="body2" color="textSecondary">
-            {comment.user.username} |{" "}
-            {new Date(comment.createdAt).toLocaleString()}
-          </Typography>
-          <Typography variant="body1">{comment.content}</Typography>
-        </Paper>
+        <Comment key={comment.id} comment={comment} />
       ))}
     </Box>
   );

@@ -13,7 +13,7 @@ const App = () => {
       <Routes>
         {/* Strony bez navbar i autentykacji */}
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/registration" element={<RegistrationPage />} />
+        <Route path="/register" element={<RegistrationPage />} />
 
         {/* Strony z navbar i autentykacja */}
         <Route
