@@ -6,6 +6,7 @@ import PrivateRoute from "./components/Routes/PrivateRoute";
 import Layout from "./components/Layout/Layout";
 import RegistrationPage from "./components/Pages/RegistrationPage";
 import UserPostPage from "./components/Pages/UserPostPage";
+import PostDetails from "./components/Posts/PostDetails";
 
 const App = () => {
   return (
@@ -36,7 +37,16 @@ const App = () => {
             </PrivateRoute>
           }
         />
-
+        <Route
+          path="/post/:id"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <PostDetails />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
         <Route path="*" element={<LoginPage />} />
       </Routes>
     </Router>

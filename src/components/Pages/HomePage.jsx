@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Container, CircularProgress } from "@mui/material";
 import { makeStyles } from "@mui/styles";
 import PostList from "../Posts/PostList";
-import PostDetails from "../Posts/PostDetails";
 
 const useStyles = makeStyles({
   content: {
@@ -15,7 +14,6 @@ const useStyles = makeStyles({
 const HomePage = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPostId, setSelectedPostId] = useState(null);
   const classes = useStyles();
 
   useEffect(() => {
@@ -40,13 +38,7 @@ const HomePage = () => {
 
   return (
     <Container className={classes.content}>
-      {loading ? (
-        <CircularProgress />
-      ) : selectedPostId ? (
-        <PostDetails postId={selectedPostId} />
-      ) : (
-        <PostList posts={posts} onPostClick={setSelectedPostId} />
-      )}
+      {loading ? <CircularProgress /> : <PostList posts={posts} />}
     </Container>
   );
 };

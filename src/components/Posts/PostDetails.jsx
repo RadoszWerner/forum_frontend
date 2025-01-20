@@ -1,45 +1,48 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
-  CircularProgress,
-  Typography,
   Box,
-  Paper,
   Button,
-  Stack,
+  CircularProgress,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
+  DialogContent,
+  DialogTitle,
+  Paper,
+  Stack,
   TextField,
+  Typography,
 } from "@mui/material";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
+import {
+  getUserIdFromToken,
+  getRoleFromToken,
+  getUsernameFromToken,
+} from "../../auth";
 import Comment from "../Comments/Comment";
-import { getUserIdFromToken, getRoleFromToken } from "../../auth";
 
-const PostDetails = ({ postId }) => {
-  const [post, setPost] = useState(null);
+const PostDetails = () => {
+  const { id } = useParams(); // Pobieramy ID z URL
+  const location = useLocation(); // Pobieramy dane z state
+  const [post, setPost] = useState(location.state?.post || null);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const navigate = useNavigate();
-
+  const token = localStorage.getItem("token");
+  const userId = getUserIdFromToken();
+  const userRole = getRoleFromToken();
+  const username = getUsernameFromToken();
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
     const fetchPost = async () => {
+      if (post) return;
       try {
-        const postResponse = await fetch(
-          `http://localhost:8080/posts/${postId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        const postData = await postResponse.json();
-        setPost(postData);
+        const response = await fetch(`http://localhost:8080/posts/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await response.json();
+        setPost(data);
       } catch (error) {
         console.error("Error fetching post:", error);
       }
@@ -47,16 +50,14 @@ const PostDetails = ({ postId }) => {
 
     const fetchComments = async () => {
       try {
-        const commentsResponse = await fetch(
-          `http://localhost:8080/comments/post/${postId}`,
+        const response = await fetch(
+          `http://localhost:8080/comments/post/${id}`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
           }
         );
-        const commentsData = await commentsResponse.json();
-        setComments(commentsData);
+        const data = await response.json();
+        setComments(data);
       } catch (error) {
         console.error("Error fetching comments:", error);
       }
@@ -69,7 +70,7 @@ const PostDetails = ({ postId }) => {
     };
 
     fetchData();
-  }, [postId]);
+  }, [id, post, token]);
 
   const handleEditOpen = () => {
     setEditTitle(post.title);
@@ -83,57 +84,81 @@ const PostDetails = ({ postId }) => {
 
   const handleEditSave = async () => {
     const token = localStorage.getItem("token");
+    const username = getUsernameFromToken();
+
+    if (!username) {
+      alert("Nie można pobrać nazwy użytkownika.");
+      return;
+    }
+
     try {
-      const response = await fetch(`http://localhost:8080/posts/edit`, {
+      const response = await fetch("http://localhost:8080/posts/edit", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          title: editTitle,
-          content: editContent,
+          postId: post.id,
+          username,
+          newTitle: editTitle,
+          newContent: editContent,
         }),
       });
 
+      const responseText = await response.text();
+
       if (response.ok) {
-        const updatedPost = await response.json();
-        setPost(updatedPost);
-        setEditDialogOpen(false);
+        // Zaktualizuj dane posta, bez ponownego wywoływania API
+        setPost((prevPost) => ({
+          ...prevPost,
+          title: editTitle,
+          content: editContent,
+        }));
+
+        setEditDialogOpen(false); // Zamknij okno edycji
         alert("Post updated successfully.");
       } else {
-        alert("Failed to update post.");
+        alert(`Failed to update post: ${responseText}`);
       }
     } catch (error) {
       console.error("Error updating post:", error);
+      alert("An error occurred while updating the post.");
     }
   };
 
   const handleDelete = async () => {
-    const token = localStorage.getItem("token");
+    if (!username) {
+      alert("Nie można pobrać nazwy użytkownika.");
+      return;
+    }
     try {
-      const response = await fetch(`http://localhost:8080/posts/${postId}`, {
+      const response = await fetch("http://localhost:8080/posts/delete", {
         method: "DELETE",
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify({ postId: id, username }), // Przesyłamy dane w body
       });
+
       if (response.ok) {
         alert("Post deleted successfully.");
-        window.location.href = "/home";
+        navigate("/home");
       } else {
-        alert("Failed to delete post.");
+        const errorMsg = await response.text();
+        alert(`Failed to delete post: ${errorMsg}`);
       }
     } catch (error) {
       console.error("Error deleting post:", error);
+      alert("An error occurred while deleting the post.");
     }
   };
 
   if (loading) {
     return <CircularProgress />;
   }
-  const userId = getUserIdFromToken();
-  const userRole = getRoleFromToken();
+
   const canEditOrDelete =
     userId && (userId === post.user.id || userRole === "moderator");
 
