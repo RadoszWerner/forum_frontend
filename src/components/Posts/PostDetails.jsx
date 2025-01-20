@@ -21,11 +21,12 @@ import {
 import Comment from "../Comments/Comment";
 
 const PostDetails = () => {
-  const { id } = useParams(); // Pobieramy ID z URL
-  const location = useLocation(); // Pobieramy dane z state
+  const { id } = useParams();
+  const location = useLocation();
   const [post, setPost] = useState(location.state?.post || null);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [newComment, setNewComment] = useState("");
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
@@ -57,6 +58,7 @@ const PostDetails = () => {
           }
         );
         const data = await response.json();
+        console.log(data);
         setComments(data);
       } catch (error) {
         console.error("Error fetching comments:", error);
@@ -83,9 +85,6 @@ const PostDetails = () => {
   };
 
   const handleEditSave = async () => {
-    const token = localStorage.getItem("token");
-    const username = getUsernameFromToken();
-
     if (!username) {
       alert("Nie można pobrać nazwy użytkownika.");
       return;
@@ -155,6 +154,49 @@ const PostDetails = () => {
     }
   };
 
+  const handleAddComment = async () => {
+    if (!newComment.trim()) {
+      alert("Comment cannot be empty.");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:8080/comments/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          postId: id, // ID posta
+          username, // Nazwa użytkownika
+          content: newComment, // Treść nowego komentarza
+        }),
+      });
+
+      const responseText = await response.text();
+
+      if (response.ok) {
+        // Dodanie komentarza do lokalnego stanu, bez konieczności ponownego pobierania listy
+        const newCommentData = {
+          id: Date.now(),
+          user: { username }, // Dodaj obiekt user z username
+          content: newComment,
+          createdAt: new Date().toISOString(),
+        };
+
+        setComments((prevComments) => [...prevComments, newCommentData]);
+        setNewComment(""); // Wyczyść pole komentarza
+        alert(responseText); // Wyświetl wiadomość zwróconą z backendu
+      } else {
+        alert(`Failed to add comment: ${responseText}`);
+      }
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      alert("An error occurred while adding the comment.");
+    }
+  };
+
   if (loading) {
     return <CircularProgress />;
   }
@@ -201,10 +243,29 @@ const PostDetails = () => {
       </Paper>
 
       <Typography variant="h6">Comments:</Typography>
-      {comments.map((comment) => (
-        <Comment key={comment.id} comment={comment} />
-      ))}
-
+      {comments
+        .filter((comment) => !comment.deleted)
+        .map((comment) => (
+          <Comment key={comment.id} comment={comment} />
+        ))}
+      <Box sx={{ marginTop: "20px" }}>
+        <TextField
+          label="Add a comment"
+          fullWidth
+          multiline
+          rows={3}
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+        />
+        <Button
+          variant="contained"
+          color="primary"
+          sx={{ marginTop: "10px" }}
+          onClick={handleAddComment}
+        >
+          Add Comment
+        </Button>
+      </Box>
       {/* Edit Post Dialog */}
       <Dialog open={isEditDialogOpen} onClose={handleEditClose}>
         <DialogTitle>Edit Post</DialogTitle>
