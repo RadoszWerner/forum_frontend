@@ -108,14 +108,13 @@ const PostDetails = () => {
       const responseText = await response.text();
 
       if (response.ok) {
-        // Zaktualizuj dane posta, bez ponownego wywoływania API
         setPost((prevPost) => ({
           ...prevPost,
           title: editTitle,
           content: editContent,
         }));
 
-        setEditDialogOpen(false); // Zamknij okno edycji
+        setEditDialogOpen(false);
         alert("Post updated successfully.");
       } else {
         alert(`Failed to update post: ${responseText}`);
@@ -138,7 +137,7 @@ const PostDetails = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ postId: id, username }), // Przesyłamy dane w body
+        body: JSON.stringify({ postId: id, username }),
       });
 
       if (response.ok) {
@@ -168,26 +167,25 @@ const PostDetails = () => {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          postId: id, // ID posta
-          username, // Nazwa użytkownika
-          content: newComment, // Treść nowego komentarza
+          postId: id,
+          username,
+          content: newComment,
         }),
       });
 
       const responseText = await response.text();
 
       if (response.ok) {
-        // Dodanie komentarza do lokalnego stanu, bez konieczności ponownego pobierania listy
         const newCommentData = {
           id: Date.now(),
-          user: { username }, // Dodaj obiekt user z username
+          user: { username },
           content: newComment,
           createdAt: new Date().toISOString(),
         };
 
         setComments((prevComments) => [...prevComments, newCommentData]);
-        setNewComment(""); // Wyczyść pole komentarza
-        alert(responseText); // Wyświetl wiadomość zwróconą z backendu
+        setNewComment("");
+        alert(responseText);
       } else {
         alert(`Failed to add comment: ${responseText}`);
       }

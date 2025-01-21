@@ -49,8 +49,8 @@ const Layout = ({ children }) => {
             </Typography>
           </ListItem>
           <ListItem button>
-            <Typography onClick={() => (window.location.href = "/profile")}>
-              Profile
+            <Typography onClick={() => (window.location.href = "/mod-logs")}>
+              Mod Logs
             </Typography>
           </ListItem>
         </List>
